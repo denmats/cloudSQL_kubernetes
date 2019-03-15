@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+  labels:
+    app: proxy
+spec:
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      containers:
+        - name: ubuntu
+          image: gcr.io/$PROJECT_ID/toolbox:2.0
+          env:
+          - name: PROJECT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: yaml-config
+                key: project-id
+          imagePullPolicy: Always
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.11
+          env:
+          - name: INSTANCE_CONNECTION_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: yaml-config
+                key: instance-connection-name
+          command: ["/cloud_sql_proxy",
+                    "-instances=$INSTANCE_CONNECTION_NAME=tcp:3306",
+                    "-credential_file=/secrets/cloudsql/credentials.json"]
+          # [START cloudsql_security_context]
+          securityContext:
+            runAsUser: 2  # non-root user
+            allowPrivilegeEscalation: false
+          # [END cloudsql_security_context]
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql
+              readOnly: true
+      volumes:
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials

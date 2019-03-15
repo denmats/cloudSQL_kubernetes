@@ -1,0 +1,192 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+        name: users
+        labels:
+                app: microservices
+spec:
+        replicas: 1
+        template:
+                metadata:
+                        labels:
+                                app: microservices
+                                tier: frontend
+                spec:
+                        containers:
+                              - name: microservices-app
+                                image: gcr.io/$PROJECT_ID/users
+                                imagePullPolicy: Always
+                                ports:
+                                      - name: users
+                                        containerPort: 8080
+                                env:
+                                      - name: GET_HOSTS_FROM
+                                        value: env
+                                      - name: DB_USER
+                                        valueFrom:
+                                          secretKeyRef:
+                                            name: cloudsql-db-credentials
+                                            key: user
+                                      - name: DB_USER_PASSWORD
+                                        valueFrom:
+                                          secretKeyRef:
+                                            name: cloudsql-db-credentials
+                                            key: password
+                                      - name: PROJECT_ID
+                                        valueFrom:
+                                          configMapKeyRef:
+                                            name: yaml-config
+                                            key: project-id
+                              - name: cloudsql-proxy
+                                image: gcr.io/cloudsql-docker/gce-proxy:1.11
+                                env:
+                                - name: INSTANCE_CONNECTION_NAME
+                                  valueFrom:
+                                    configMapKeyRef:
+                                      name: yaml-config
+                                      key: instance-connection-name       
+                                command: ["/cloud_sql_proxy",
+                                          "-instances=$INSTANCE_CONNECTION_NAME=tcp:3306",
+                                          "-credential_file=/secrets/cloudsql/credentials.json"]
+                                # [START cloudsql_security_context]
+                                securityContext:
+                                  runAsUser: 2  # non-root user
+                                  allowPrivilegeEscalation: false
+                                # [END cloudsql_security_context]
+                                volumeMounts:
+                                  - name: cloudsql-instance-credentials
+                                    mountPath: /secrets/cloudsql
+                                    readOnly: true
+                        volumes:
+                          - name: cloudsql-instance-credentials
+                            secret:
+                              secretName: cloudsql-instance-credentials
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+        name: bookings
+        labels:
+                app: microservices
+spec:
+        replicas: 1
+        template:
+                metadata:
+                        labels:
+                                app: microservices
+                                tier: worker
+                spec:
+                        containers:
+                              - name: microservices-app
+                                image: gcr.io/$PROJECT_ID/bookings
+                                imagePullPolicy: Always
+                                ports:
+                                      - name: bookings
+                                        containerPort: 8080
+                                env:
+                                      - name: GET_HOSTS_FROM
+                                        value: env
+                                      - name: DB_USER
+                                        valueFrom:
+                                          secretKeyRef:
+                                            name: cloudsql-db-credentials
+                                            key: user
+                                      - name: DB_USER_PASSWORD
+                                        valueFrom:
+                                          secretKeyRef:
+                                            name: cloudsql-db-credentials
+                                            key: password
+                                      - name: PROJECT_ID
+                                        valueFrom:
+                                          configMapKeyRef:
+                                            name: yaml-config
+                                            key: project-id
+                              - name: cloudsql-proxy
+                                image: gcr.io/cloudsql-docker/gce-proxy:1.11
+                                env:
+                                - name: INSTANCE_CONNECTION_NAME
+                                  valueFrom:
+                                    configMapKeyRef:
+                                      name: yaml-config
+                                      key: instance-connection-name 
+                                command: ["/cloud_sql_proxy",
+                                          "-instances=$INSTANCE_CONNECTION_NAME=tcp:3306",
+                                          "-credential_file=/secrets/cloudsql/credentials.json"]
+                                # [START cloudsql_security_context]
+                                securityContext:
+                                  runAsUser: 2  # non-root user
+                                  allowPrivilegeEscalation: false
+                                # [END cloudsql_security_context]
+                                volumeMounts:
+                                  - name: cloudsql-instance-credentials
+                                    mountPath: /secrets/cloudsql
+                                    readOnly: true
+                        volumes:
+                          - name: cloudsql-instance-credentials
+                            secret:
+                              secretName: cloudsql-instance-credentials
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+        name: movies
+        labels:
+                app: microservices
+spec:
+        replicas: 1
+        template:
+                metadata:
+                        labels:
+                                app: microservices
+                                tier: worker
+                spec:
+                        containers:
+                              - name: microservices-app
+                                image: gcr.io/$PROJECT_ID/movies
+                                imagePullPolicy: Always
+                                ports:
+                                      - name: movies
+                                        containerPort: 8080
+                                env:
+                                      - name: GET_HOSTS_FROM
+                                        value: env
+                                      - name: DB_USER
+                                        valueFrom:
+                                          secretKeyRef:
+                                            name: cloudsql-db-credentials
+                                            key: user
+                                      - name: DB_USER_PASSWORD
+                                        valueFrom:
+                                          secretKeyRef:
+                                            name: cloudsql-db-credentials
+                                            key: password
+                                      - name: PROJECT_ID
+                                        valueFrom:
+                                          configMapKeyRef:
+                                            name: yaml-config
+                                            key: project-id
+                              - name: cloudsql-proxy
+                                image: gcr.io/cloudsql-docker/gce-proxy:1.11
+                                env:
+                                - name: INSTANCE_CONNECTION_NAME
+                                  valueFrom:
+                                    configMapKeyRef:
+                                      name: yaml-config
+                                      key: instance-connection-name
+                                command: ["/cloud_sql_proxy",
+                                          "-instances=$INSTANCE_CONNECTION_NAME=tcp:3306",
+                                          "-credential_file=/secrets/cloudsql/credentials.json"]
+                                # [START cloudsql_security_context]
+                                securityContext:
+                                  runAsUser: 2  # non-root user
+                                  allowPrivilegeEscalation: false
+                                # [END cloudsql_security_context]
+                                volumeMounts:
+                                  - name: cloudsql-instance-credentials
+                                    mountPath: /secrets/cloudsql
+                                    readOnly: true
+                        volumes:
+                          - name: cloudsql-instance-credentials
+                            secret:
+                              secretName: cloudsql-instance-credentials
+---

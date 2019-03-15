@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+        name: frontend
+spec:
+        selector:
+                app: microservices
+                tier: frontend
+        ports:
+              - protocol: "TCP"
+                port: 80
+                targetPort: users
+        type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+        name: bookings-service
+spec:
+        selector:
+                app: microservices
+        ports:
+              - port: 8080
+                targetPort: bookings
+---
+---
+apiVersion: v1
+kind: Service
+metadata:
+        name: movies-service
+spec:
+        selector:
+                app: microservices
+        ports:
+              - port: 8080
+                targetPort: movies
+---
